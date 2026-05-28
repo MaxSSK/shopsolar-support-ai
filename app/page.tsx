@@ -2,17 +2,6 @@
 import { useState } from 'react'
 import styles from './page.module.css'
 
-const TOPICS = [
-  'Warranty - Replace',
-  'Warranty - Technical',
-  'Return Request',
-  'Refund Request',
-  'Recovery - Damaged',
-  'Recovery - Missing Item',
-  'General Support',
-  'No topic (classify automatically)',
-]
-
 const CLASSIFICATION_COLORS: Record<string, string> = {
   RETURN_REQUEST: 'amber',
   WARRANTY_CLAIM: 'blue',
@@ -30,8 +19,9 @@ const CLASSIFICATION_LABELS: Record<string, string> = {
 }
 
 export default function Home() {
-  const [email, setEmail] = useState('')
-  const [topic, setTopic] = useState('No topic (classify automatically)')
+  const [mode, setMode] = useState<'new' | 'existing'>('new')
+  const [slackText, setSlackText] = useState('')
+  const [ticketNumber, setTicketNumber] = useState('')
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<any>(null)
   const [error, setError] = useState('')
@@ -39,19 +29,19 @@ export default function Home() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!email.trim()) return
     setLoading(true)
     setError('')
     setResult(null)
 
     try {
+      const body = mode === 'new'
+        ? { mode: 'new', slackText }
+        : { mode: 'existing', ticketNumber }
+
       const res = await fetch('/api/draft', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          emailContent: email,
-          topic: topic === 'No topic (classify automatically)' ? null : topic,
-        }),
+        body: JSON.stringify(body),
       })
       const data = await res.json()
       if (data.error) throw new Error(data.error)
@@ -73,16 +63,16 @@ export default function Home() {
 
   function reset() {
     setResult(null)
-    setEmail('')
+    setSlackText('')
+    setTicketNumber('')
     setError('')
-    setTopic('No topic (classify automatically)')
   }
 
   const classColor = result ? CLASSIFICATION_COLORS[result.classification] || 'gray' : 'gray'
+  const isValid = mode === 'new' ? slackText.trim().length > 0 : ticketNumber.trim().length > 0
 
   return (
     <div className={styles.app}>
-      {/* Header */}
       <header className={styles.header}>
         <div className={styles.headerInner}>
           <div className={styles.logo}>
@@ -98,68 +88,93 @@ export default function Home() {
 
       <main className={styles.main}>
         {!result ? (
-          /* INPUT PANEL */
           <div className={styles.inputPanel}>
             <div className={styles.panelHeader}>
               <h1 className={styles.panelTitle}>Draft a Response</h1>
-              <p className={styles.panelSub}>Paste a customer email below. The AI will classify it, check the order in Shopify, and draft a response for your review.</p>
+              <p className={styles.panelSub}>Choose a mode below — new ticket from Slack, or a follow-up on an existing Zoho ticket.</p>
+            </div>
+
+            {/* Mode switcher */}
+            <div className={styles.modeSwitcher}>
+              <button
+                className={`${styles.modeBtn} ${mode === 'new' ? styles.modeBtnActive : ''}`}
+                onClick={() => { setMode('new'); setError('') }}
+                type="button"
+              >
+                <span className={styles.modeIcon}>✦</span>
+                <div>
+                  <div className={styles.modeName}>New Ticket</div>
+                  <div className={styles.modeSub}>Paste Slack workflow message → draft first email to customer</div>
+                </div>
+              </button>
+              <button
+                className={`${styles.modeBtn} ${mode === 'existing' ? styles.modeBtnActive : ''}`}
+                onClick={() => { setMode('existing'); setError('') }}
+                type="button"
+              >
+                <span className={styles.modeIcon}>↺</span>
+                <div>
+                  <div className={styles.modeName}>Existing Ticket</div>
+                  <div className={styles.modeSub}>Enter Zoho ticket # → draft next reply in conversation</div>
+                </div>
+              </button>
             </div>
 
             <form onSubmit={handleSubmit} className={styles.form}>
-              <div className={styles.field}>
-                <label className={styles.label}>Topic (from Slack workflow)</label>
-                <select
-                  className={styles.select}
-                  value={topic}
-                  onChange={e => setTopic(e.target.value)}
-                >
-                  {TOPICS.map(t => (
-                    <option key={t} value={t}>{t}</option>
-                  ))}
-                </select>
-                <span className={styles.fieldNote}>If the ticket came through Slack with a topic already set, select it here. Otherwise leave as auto-classify.</span>
-              </div>
-
-              <div className={styles.field}>
-                <label className={styles.label}>Customer Email</label>
-                <textarea
-                  className={styles.textarea}
-                  value={email}
-                  onChange={e => setEmail(e.target.value)}
-                  placeholder="Paste the customer's email here — include the full message. The AI will extract the order number if present and look it up in Shopify automatically."
-                  rows={12}
-                />
-              </div>
+              {mode === 'new' ? (
+                <div className={styles.field}>
+                  <label className={styles.label}>Slack Workflow Message</label>
+                  <textarea
+                    className={styles.textarea}
+                    value={slackText}
+                    onChange={e => setSlackText(e.target.value)}
+                    placeholder={`Paste the Slack service request here. Example:\n\nService Request [5:16 PM]\nService Ticket Added by @Bruce  Topic: Warranty  Customer Name: Angela LaPointe  Customer Email: angelalapointe33@gmail.com  Shopify Link: https://admin.shopify.com/store/shopsolarkits/orders/5155457335436\n\nThe AI will extract all fields and pull the Shopify order notes automatically.`}
+                    rows={10}
+                  />
+                  <span className={styles.fieldNote}>The AI will extract customer name, email, topic, and Shopify link — then pull the full order details and notes automatically.</span>
+                </div>
+              ) : (
+                <div className={styles.field}>
+                  <label className={styles.label}>Zoho Desk Ticket Number</label>
+                  <input
+                    className={styles.input}
+                    value={ticketNumber}
+                    onChange={e => setTicketNumber(e.target.value)}
+                    placeholder="e.g. 234618 or #234618"
+                    type="text"
+                  />
+                  <span className={styles.fieldNote}>The AI will pull the full conversation thread from Zoho Desk and the Shopify order notes, then draft the next reply.</span>
+                </div>
+              )}
 
               {error && (
-                <div className={styles.errorBox}>
-                  <span>⚠</span> {error}
-                </div>
+                <div className={styles.errorBox}>⚠ {error}</div>
               )}
 
               <button
                 type="submit"
                 className={styles.submitBtn}
-                disabled={loading || !email.trim()}
+                disabled={loading || !isValid}
               >
                 {loading ? (
                   <span className={styles.loadingRow}>
                     <span className={styles.spinner} />
-                    Drafting response...
+                    {mode === 'new' ? 'Reading Slack & Shopify...' : 'Reading Zoho & Shopify...'}
                   </span>
                 ) : (
-                  'Generate Draft →'
+                  mode === 'new' ? 'Draft First Email →' : 'Draft Next Reply →'
                 )}
               </button>
             </form>
           </div>
         ) : (
-          /* RESULT PANEL */
           <div className={styles.resultPanel}>
-            {/* Top bar */}
             <div className={styles.resultTopBar}>
-              <button className={styles.backBtn} onClick={reset}>← New Email</button>
+              <button className={styles.backBtn} onClick={reset}>← New Draft</button>
               <div className={styles.resultMeta}>
+                <span className={`${styles.modePill} ${result.mode === 'new' ? styles.modeNew : styles.modeExisting}`}>
+                  {result.mode === 'new' ? '✦ New Ticket' : '↺ Existing Ticket'}
+                </span>
                 <span className={`${styles.classTag} ${styles[`class_${classColor}`]}`}>
                   {CLASSIFICATION_LABELS[result.classification] || result.classification}
                 </span>
@@ -170,52 +185,59 @@ export default function Home() {
             </div>
 
             <div className={styles.resultGrid}>
-              {/* Left column */}
               <div className={styles.resultLeft}>
 
-                {/* Summary card */}
                 <div className={styles.card}>
                   <div className={styles.cardLabel}>Issue Summary</div>
                   <p className={styles.summaryText}>{result.summary}</p>
                 </div>
 
-                {/* Routing card */}
                 <div className={styles.card}>
                   <div className={styles.cardLabel}>Route To</div>
                   <div className={styles.routeTag}>{result.routing}</div>
                 </div>
 
+                {/* Slack extracted data (new mode) */}
+                {result.slackData && (
+                  <div className={styles.card}>
+                    <div className={styles.cardLabel}>Extracted from Slack</div>
+                    <div className={styles.orderGrid}>
+                      {result.slackData.customerName && <div className={styles.orderRow}><span className={styles.orderKey}>Customer</span><span className={styles.orderVal}>{result.slackData.customerName}</span></div>}
+                      {result.slackData.customerEmail && <div className={styles.orderRow}><span className={styles.orderKey}>Email</span><span className={styles.orderVal}>{result.slackData.customerEmail}</span></div>}
+                      {result.slackData.topic && <div className={styles.orderRow}><span className={styles.orderKey}>Topic</span><span className={styles.orderVal}>{result.slackData.topic}</span></div>}
+                    </div>
+                  </div>
+                )}
+
+                {/* Zoho ticket info (existing mode) */}
+                {result.zohoTicket && (
+                  <div className={styles.card}>
+                    <div className={styles.cardLabel}>Zoho Ticket</div>
+                    <div className={styles.orderGrid}>
+                      <div className={styles.orderRow}><span className={styles.orderKey}>Subject</span><span className={styles.orderVal}>{result.zohoTicket.subject}</span></div>
+                      <div className={styles.orderRow}><span className={styles.orderKey}>Status</span><span className={styles.orderVal}>{result.zohoTicket.status}</span></div>
+                      <div className={styles.orderRow}><span className={styles.orderKey}>Threads read</span><span className={styles.orderVal}>{result.threadCount}</span></div>
+                      {result.zohoTicket.assignee && <div className={styles.orderRow}><span className={styles.orderKey}>Assigned to</span><span className={styles.orderVal}>{result.zohoTicket.assignee.firstName} {result.zohoTicket.assignee.lastName}</span></div>}
+                    </div>
+                  </div>
+                )}
+
                 {/* Order details */}
                 {result.orderDetails && (
                   <div className={styles.card}>
-                    <div className={styles.cardLabel}>Order Lookup — Shopify</div>
+                    <div className={styles.cardLabel}>Shopify Order</div>
                     <div className={styles.orderGrid}>
-                      <div className={styles.orderRow}>
-                        <span className={styles.orderKey}>Order</span>
-                        <span className={styles.orderVal}>{result.orderDetails.orderNumber}</span>
-                      </div>
-                      <div className={styles.orderRow}>
-                        <span className={styles.orderKey}>Customer</span>
-                        <span className={styles.orderVal}>{result.orderDetails.customerName}</span>
-                      </div>
-                      <div className={styles.orderRow}>
-                        <span className={styles.orderKey}>Purchase date</span>
-                        <span className={styles.orderVal}>{result.orderDetails.createdAt}</span>
-                      </div>
-                      <div className={styles.orderRow}>
-                        <span className={styles.orderKey}>Days since purchase</span>
-                        <span className={styles.orderVal}>{result.orderDetails.daysSincePurchase} days</span>
-                      </div>
+                      <div className={styles.orderRow}><span className={styles.orderKey}>Order</span><span className={styles.orderVal}>{result.orderDetails.orderNumber}</span></div>
+                      <div className={styles.orderRow}><span className={styles.orderKey}>Customer</span><span className={styles.orderVal}>{result.orderDetails.customerName}</span></div>
+                      <div className={styles.orderRow}><span className={styles.orderKey}>Purchase date</span><span className={styles.orderVal}>{result.orderDetails.createdAt}</span></div>
+                      <div className={styles.orderRow}><span className={styles.orderKey}>Days since purchase</span><span className={styles.orderVal}>{result.orderDetails.daysSincePurchase} days</span></div>
                       <div className={styles.orderRow}>
                         <span className={styles.orderKey}>Return window</span>
                         <span className={`${styles.orderVal} ${result.orderDetails.withinReturnWindow ? styles.valGreen : styles.valRed}`}>
                           {result.orderDetails.withinReturnWindow ? '✓ Within 30 days' : '✗ Past 30 days'}
                         </span>
                       </div>
-                      <div className={styles.orderRow}>
-                        <span className={styles.orderKey}>Order total</span>
-                        <span className={styles.orderVal}>{result.orderDetails.totalPrice}</span>
-                      </div>
+                      <div className={styles.orderRow}><span className={styles.orderKey}>Order total</span><span className={styles.orderVal}>{result.orderDetails.totalPrice}</span></div>
                     </div>
                     {result.orderDetails.lineItems?.length > 0 && (
                       <div className={styles.lineItems}>
@@ -228,22 +250,24 @@ export default function Home() {
                         ))}
                       </div>
                     )}
+                    {result.orderDetails.orderNote && (
+                      <div className={styles.orderNotes}>
+                        <div className={styles.lineItemsLabel}>Order Notes</div>
+                        <p className={styles.orderNoteText}>{result.orderDetails.orderNote}</p>
+                      </div>
+                    )}
                   </div>
                 )}
 
-                {/* Missing info */}
                 {result.missing_info?.length > 0 && (
                   <div className={`${styles.card} ${styles.cardAmber}`}>
                     <div className={styles.cardLabel}>Missing Information</div>
                     <ul className={styles.missingList}>
-                      {result.missing_info.map((item: string, i: number) => (
-                        <li key={i}>{item}</li>
-                      ))}
+                      {result.missing_info.map((item: string, i: number) => <li key={i}>{item}</li>)}
                     </ul>
                   </div>
                 )}
 
-                {/* Internal notes */}
                 {result.internal_notes && (
                   <div className={`${styles.card} ${styles.cardBlue}`}>
                     <div className={styles.cardLabel}>Agent Notes</div>
@@ -252,11 +276,12 @@ export default function Home() {
                 )}
               </div>
 
-              {/* Right column — draft */}
               <div className={styles.resultRight}>
                 <div className={styles.draftCard}>
                   <div className={styles.draftHeader}>
-                    <div className={styles.cardLabel}>Drafted Response</div>
+                    <div className={styles.cardLabel}>
+                      {result.mode === 'new' ? 'First Contact Draft' : 'Next Reply Draft'}
+                    </div>
                     <button className={styles.copyBtn} onClick={copyDraft}>
                       {copied ? '✓ Copied' : 'Copy'}
                     </button>

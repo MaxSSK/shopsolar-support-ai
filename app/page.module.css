@@ -483,3 +483,111 @@
   border-top: 1px solid var(--border);
   margin-top: 10px;
 }
+
+/* ── MODE SWITCHER ─────────────────────────────────────────── */
+.modeSwitcher {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 28px;
+}
+
+.modeBtn {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: white;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.15s;
+  font-family: 'DM Sans', sans-serif;
+}
+
+.modeBtn:hover {
+  border-color: var(--ink);
+  background: var(--paper-warm);
+}
+
+.modeBtnActive {
+  border-color: var(--sun) !important;
+  background: var(--sun-light) !important;
+}
+
+.modeIcon {
+  font-size: 18px;
+  color: var(--sun);
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.modeName {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+  margin-bottom: 3px;
+}
+
+.modeSub {
+  font-size: 12px;
+  color: var(--ink-muted);
+  line-height: 1.4;
+}
+
+/* ── INPUT ─────────────────────────────────────────────────── */
+.input {
+  padding: 10px 14px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  background: white;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 15px;
+  color: var(--ink);
+  transition: border-color 0.15s;
+  width: 100%;
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--sun);
+  box-shadow: 0 0 0 3px rgba(232,130,74,0.12);
+}
+
+/* ── MODE PILLS ────────────────────────────────────────────── */
+.modePill {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 20px;
+  letter-spacing: 0.03em;
+}
+
+.modeNew {
+  background: var(--sun-light);
+  color: var(--sun-dark);
+}
+
+.modeExisting {
+  background: var(--green-light);
+  color: var(--green);
+}
+
+/* ── ORDER NOTES ───────────────────────────────────────────── */
+.orderNotes {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.orderNoteText {
+  font-size: 12px;
+  color: var(--ink-muted);
+  line-height: 1.6;
+  font-family: 'DM Mono', monospace;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 200px;
+  overflow-y: auto;
+}
