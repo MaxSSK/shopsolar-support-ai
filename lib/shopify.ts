@@ -18,26 +18,16 @@ export interface OrderDetails {
 }
 
 async function shopifyFetch(path: string) {
-  // Try both auth header formats — shppa_ tokens use Basic auth, shpat_ use X-Shopify-Access-Token
   const token = SHOPIFY_TOKEN || ''
-  
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-  }
-
-  // shppa_ = legacy private app password, needs Basic auth
-  // shpat_ = custom app access token, needs X-Shopify-Access-Token
-  if (token.startsWith('shppa_')) {
-    const encoded = Buffer.from(`shopsolarkits:${token}`).toString('base64')
-    headers['Authorization'] = `Basic ${encoded}`
-  } else {
-    headers['X-Shopify-Access-Token'] = token
-  }
-
-  const res = await fetch(`https://${SHOPIFY_URL}/admin/api/2024-01${path}`, { headers })
+  const res = await fetch(`https://${SHOPIFY_URL}/admin/api/2024-01${path}`, {
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Shopify-Access-Token': token,
+    },
+  })
   if (!res.ok) {
     const errText = await res.text()
-    console.error(`Shopify API error ${res.status}:`, errText)
+    console.error(`Shopify API error ${res.status} for ${path}:`, errText)
     return null
   }
   return res.json()
@@ -82,7 +72,6 @@ function formatOrder(order: any): OrderDetails {
   const now = new Date()
   const daysSincePurchase = Math.floor((now.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24))
 
-  // Collect all notes — main note field plus any note_attributes
   const mainNote = order.note || ''
   const attrNotes = (order.note_attributes || [])
     .map((a: any) => `${a.name}: ${a.value}`)
@@ -122,11 +111,8 @@ export function extractSlackData(slackText: string): {
   addedBy?: string
 } {
   const result: any = {}
-
-  // Clean up the text — normalize whitespace issues from Slack copy-paste
   const text = slackText.replace(/\s+/g, ' ').trim()
 
-  // Extract each field — use lookahead to stop at the next field label
   const topicMatch = text.match(/Topic:\s*(.*?)(?=\s+Customer Name:|$)/i)
   if (topicMatch) result.topic = topicMatch[1].trim()
 
@@ -136,11 +122,8 @@ export function extractSlackData(slackText: string): {
   const emailMatch = text.match(/Customer Email:\s*([^\s]+)/i)
   if (emailMatch) result.customerEmail = emailMatch[1].trim().replace(/[<>]/g, '')
 
-  const linkMatch = text.match(/(?:Shopify Link:|https:\/\/admin\.shopify\.com\/store\/[^\s]+)/i)
-  if (linkMatch) {
-    const urlMatch = text.match(/https:\/\/admin\.shopify\.com\/store\/[^\s]+/i)
-    if (urlMatch) result.shopifyLink = urlMatch[0].trim()
-  }
+  const urlMatch = text.match(/https:\/\/admin\.shopify\.com\/store\/[^\s]+/i)
+  if (urlMatch) result.shopifyLink = urlMatch[0].trim()
 
   const addedByMatch = text.match(/Added by @([^\s]+)/i)
   if (addedByMatch) result.addedBy = addedByMatch[1].trim()
