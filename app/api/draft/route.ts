@@ -93,8 +93,11 @@ Fulfillment: ${orderDetails.fulfillmentStatus}
 Products ordered:
 ${orderDetails.lineItems.map(item => `- ${item.name} (SKU: ${item.sku}) x${item.quantity} @ ${item.price}`).join('\n')}
 
-## ORDER NOTES (written by team member who took the call)
-${orderDetails.orderNote || 'No notes on this order.'}
+## ORDER NOTES (top-level note field)
+${orderDetails.orderNote || 'No notes.'}
+
+## STAFF TIMELINE NOTES (written by team in Shopify order timeline — most important)
+${orderDetails.timelineNotes || 'No timeline notes found.'}
 `
       }
 
@@ -183,6 +186,9 @@ Products: ${orderDetails.lineItems.map(i => i.name).join(', ')}
 
 Order notes:
 ${orderDetails.orderNote || 'No notes.'}
+
+Staff timeline notes:
+${orderDetails.timelineNotes || 'No timeline notes.'}
 ` : 'Shopify order data not available for this ticket.'}
 
 Please draft the next reply in this conversation.`

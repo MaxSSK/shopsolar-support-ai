@@ -14,6 +14,7 @@ export interface OrderDetails {
   daysSincePurchase: number
   withinReturnWindow: boolean
   orderNote: string
+  timelineNotes: string
   shopifyLink: string
 }
 
@@ -33,6 +34,30 @@ async function shopifyFetch(path: string) {
   return res.json()
 }
 
+async function getOrderTimelineNotes(orderId: string): Promise<string> {
+  try {
+    // Get order events/timeline - staff notes show up here
+    const data = await shopifyFetch(`/orders/${orderId}/events.json?limit=50`)
+    if (!data?.events) return ''
+
+    // Filter for staff notes (message type events with body text)
+    const staffNotes = data.events
+      .filter((e: any) => e.verb === 'commented' || (e.message && e.author && !e.author.includes('Shopify')))
+      .map((e: any) => {
+        const author = e.author || 'Staff'
+        const date = e.created_at ? new Date(e.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : ''
+        const message = e.message || e.body || ''
+        return `[${author} - ${date}]: ${message}`
+      })
+      .filter((note: string) => note.length > 20)
+
+    return staffNotes.join('\n\n')
+  } catch (err) {
+    console.error('Timeline notes error:', err)
+    return ''
+  }
+}
+
 export async function lookupOrderByUrl(shopifyUrl: string): Promise<OrderDetails | null> {
   try {
     const match = shopifyUrl.match(/orders\/(\d+)/)
@@ -48,7 +73,8 @@ export async function lookupOrderById(orderId: string): Promise<OrderDetails | n
   try {
     const data = await shopifyFetch(`/orders/${orderId}.json`)
     if (!data?.order) return null
-    return formatOrder(data.order)
+    const timelineNotes = await getOrderTimelineNotes(orderId)
+    return formatOrder(data.order, timelineNotes)
   } catch (err) {
     console.error('Shopify ID lookup error:', err)
     return null
@@ -60,14 +86,17 @@ export async function lookupOrderByNumber(orderIdentifier: string): Promise<Orde
     const cleaned = orderIdentifier.replace('#', '').trim()
     const data = await shopifyFetch(`/orders.json?name=${encodeURIComponent(cleaned)}&status=any`)
     if (!data?.orders?.length) return null
-    return formatOrder(data.orders[0])
+    const order = data.orders[0]
+    const orderId = order.id.toString()
+    const timelineNotes = await getOrderTimelineNotes(orderId)
+    return formatOrder(order, timelineNotes)
   } catch (err) {
     console.error('Shopify number lookup error:', err)
     return null
   }
 }
 
-function formatOrder(order: any): OrderDetails {
+function formatOrder(order: any, timelineNotes: string = ''): OrderDetails {
   const createdAt = new Date(order.created_at)
   const now = new Date()
   const daysSincePurchase = Math.floor((now.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24))
@@ -99,6 +128,7 @@ function formatOrder(order: any): OrderDetails {
     daysSincePurchase,
     withinReturnWindow: daysSincePurchase <= 30,
     orderNote: fullNote,
+    timelineNotes,
     shopifyLink: `https://admin.shopify.com/store/shopsolarkits/orders/${order.id}`,
   }
 }
