@@ -112,7 +112,7 @@ ${orderContext || 'Could not retrieve Shopify order data.'}
 Please draft the first outbound email to this customer.`
 
       const response = await anthropic.messages.create({
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-sonnet-4-5',
         max_tokens: 2000,
         system: SYSTEM_PROMPT_NEW_TICKET,
         messages: [{ role: 'user', content: userMessage }],
@@ -188,7 +188,7 @@ ${orderDetails.orderNote || 'No notes.'}
 Please draft the next reply in this conversation.`
 
       const response = await anthropic.messages.create({
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-sonnet-4-5',
         max_tokens: 2000,
         system: SYSTEM_PROMPT_EXISTING_TICKET,
         messages: [{ role: 'user', content: userMessage }],
