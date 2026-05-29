@@ -115,7 +115,7 @@ export async function getTicketByNumber(ticketNumber: string): Promise<ZohoTicke
     const cleaned = ticketNumber.replace('#', '').trim()
 
     // Use the search endpoint with ticketNumber field
-    const data = await zohoGet(`/tickets/search?ticketNumber=${cleaned}`, token)
+    const data = await zohoGet(`/tickets?ticketNumber=${cleaned}`, token)
 
     if (!data?.data?.length) {
       console.error('No ticket found for number:', cleaned)
