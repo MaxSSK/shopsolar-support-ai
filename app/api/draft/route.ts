@@ -7,57 +7,13 @@ import {
   extractSlackData,
   extractOrderNumber,
 } from '../../../lib/shopify'
+import { getTicketByNumber, formatThreadsForAI } from '../../../lib/zoho'
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
-const ZOHO_ORG_ID = '787984005'
-const ZOHO_TOKEN = process.env.ZOHO_DESK_TOKEN
-
-async function getZohoTicket(ticketNumber: string) {
-  if (!ZOHO_TOKEN) return null
-  try {
-    const res = await fetch(
-      `https://desk.zoho.com/api/v1/tickets/search?orgId=${ZOHO_ORG_ID}&ticketNumber=${ticketNumber}`,
-      { headers: { Authorization: `Zoho-oauthtoken ${ZOHO_TOKEN}` } }
-    )
-    if (!res.ok) return null
-    const data = await res.json()
-    return data.data?.[0] || null
-  } catch { return null }
-}
-
-async function getZohoThreads(ticketId: string) {
-  if (!ZOHO_TOKEN) return []
-  try {
-    const res = await fetch(
-      `https://desk.zoho.com/api/v1/tickets/${ticketId}/conversations?orgId=${ZOHO_ORG_ID}&limit=20`,
-      { headers: { Authorization: `Zoho-oauthtoken ${ZOHO_TOKEN}` } }
-    )
-    if (!res.ok) return []
-    const data = await res.json()
-    return data.data || []
-  } catch { return [] }
-}
-
-function formatThreadsForAI(threads: any[]): string {
-  if (!threads.length) return 'No conversation threads found.'
-  // Reverse to show oldest first
-  const sorted = [...threads].reverse()
-  return sorted.map((t, i) => {
-    const direction = t.direction === 'in' ? '← CUSTOMER' : '→ AGENT'
-    const author = t.direction === 'in'
-      ? (t.author?.name || 'Customer')
-      : (t.author?.name || 'Agent')
-    const date = new Date(t.createdTime).toLocaleDateString('en-US', {
-      month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit'
-    })
-    return `[${i + 1}] ${direction} — ${author} (${date})\n${t.summary || '(no preview available)'}`
-  }).join('\n\n---\n\n')
-}
-
 export async function POST(req: NextRequest) {
   try {
-    const { mode, slackText, ticketNumber, topic } = await req.json()
+    const { mode, slackText, ticketNumber } = await req.json()
 
     // ── MODE 1: NEW TICKET FROM SLACK ─────────────────────────
     if (mode === 'new') {
@@ -71,7 +27,6 @@ export async function POST(req: NextRequest) {
       if (slackData.shopifyLink) {
         orderDetails = await lookupOrderByUrl(slackData.shopifyLink)
       }
-
       if (!orderDetails) {
         const orderNum = extractOrderNumber(slackText)
         if (orderNum) orderDetails = await lookupOrderByNumber(orderNum)
@@ -107,8 +62,9 @@ ${slackText}
 ## EXTRACTED DATA
 Customer name: ${slackData.customerName || 'not found'}
 Customer email: ${slackData.customerEmail || 'not found'}
-Topic: ${slackData.topic || topic || 'not specified'}
+Topic: ${slackData.topic || 'not specified'}
 Shopify link: ${slackData.shopifyLink || 'not found'}
+Added by: ${slackData.addedBy || 'unknown'}
 
 ${orderContext || 'Could not retrieve Shopify order data.'}
 
@@ -129,12 +85,7 @@ Please draft the first outbound email to this customer.`
         parsed = { classification: 'OTHER', confidence: 'LOW', routing: 'Recovery Team', summary: 'Parse error', missing_info: [], draft_response: text, internal_notes: 'AI response was not valid JSON' }
       }
 
-      return NextResponse.json({
-        ...parsed,
-        orderDetails,
-        slackData,
-        mode: 'new',
-      })
+      return NextResponse.json({ ...parsed, orderDetails, slackData, mode: 'new' })
     }
 
     // ── MODE 2: EXISTING TICKET FROM ZOHO ─────────────────────
@@ -143,35 +94,24 @@ Please draft the first outbound email to this customer.`
         return NextResponse.json({ error: 'Ticket number is required' }, { status: 400 })
       }
 
-      const cleanTicket = ticketNumber.replace('#', '').trim()
+      const zohoTicket = await getTicketByNumber(ticketNumber)
+      const threadSummary = zohoTicket ? formatThreadsForAI(zohoTicket.threads) : 'Could not retrieve ticket data.'
 
-      // Try to get Zoho data via API token if available
-      let threads: any[] = []
-      let zohoTicket: any = null
-      let shopifyLink: string | null = null
-
-      if (ZOHO_TOKEN) {
-        zohoTicket = await getZohoTicket(cleanTicket)
-        if (zohoTicket) {
-          threads = await getZohoThreads(zohoTicket.id)
-          shopifyLink = zohoTicket.cf_shopify_link || zohoTicket.customFields?.['Shopify Link'] || null
-        }
-      }
-
-      // Look up Shopify order
+      // Try to find Shopify order from ticket subject or customer email
       let orderDetails = null
-      if (shopifyLink) {
-        orderDetails = await lookupOrderByUrl(shopifyLink)
+      if (zohoTicket?.customerEmail) {
+        const orderNum = extractOrderNumber(zohoTicket.subject || '')
+        if (orderNum) orderDetails = await lookupOrderByNumber(orderNum)
       }
 
-      const threadSummary = formatThreadsForAI(threads)
-
-      const userMessage = `## ZOHO DESK TICKET #${cleanTicket}
-Subject: ${zohoTicket?.subject || 'Unknown'}
-Status: ${zohoTicket?.status || 'Unknown'}
-Topic: ${zohoTicket?.customFields?.Topic || zohoTicket?.cf?.cf_topic || 'not set'}
-Customer: ${zohoTicket?.contact?.firstName || ''} ${zohoTicket?.contact?.lastName || ''} (${zohoTicket?.email || ''})
-Assigned to: ${zohoTicket?.assignee?.firstName || 'unassigned'} ${zohoTicket?.assignee?.lastName || ''}
+      const userMessage = `## ZOHO DESK TICKET #${ticketNumber.replace('#', '')}
+${zohoTicket ? `Subject: ${zohoTicket.subject}
+Status: ${zohoTicket.status}
+Topic: ${zohoTicket.topic || 'not set'}
+Customer: ${zohoTicket.customerName} (${zohoTicket.customerEmail})
+Assigned to: ${zohoTicket.assigneeName}
+Created: ${zohoTicket.createdAt}
+Total threads: ${zohoTicket.threads.length}` : 'Ticket data unavailable — Zoho connection may need re-authentication.'}
 
 ## CONVERSATION HISTORY (oldest to newest)
 ${threadSummary}
@@ -211,8 +151,14 @@ Please draft the next reply in this conversation.`
       return NextResponse.json({
         ...parsed,
         orderDetails,
-        zohoTicket,
-        threadCount: threads.length,
+        zohoTicket: zohoTicket ? {
+          subject: zohoTicket.subject,
+          status: zohoTicket.status,
+          topic: zohoTicket.topic,
+          assigneeName: zohoTicket.assigneeName,
+          createdAt: zohoTicket.createdAt,
+        } : null,
+        threadCount: zohoTicket?.threads.length || 0,
         mode: 'existing',
       })
     }
