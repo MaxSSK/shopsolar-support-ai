@@ -2,18 +2,18 @@ const ZOHO_ORG_ID = '787984005'
 const BASE_URL = 'https://desk.zoho.com/api/v1'
 
 async function getValidToken(): Promise<string | null> {
-  let token = process.env.ZOHO_DESK_TOKEN
+  const token = process.env.ZOHO_DESK_TOKEN
   if (!token) return null
 
-  // Test current token
+  // Test current token with a simple call
   const testRes = await fetch(
-    `${BASE_URL}/tickets?orgId=${ZOHO_ORG_ID}&limit=1`,
-    { headers: { 'Authorization': `Zoho-oauthtoken ${token}`, 'orgId': ZOHO_ORG_ID } }
+    `${BASE_URL}/tickets?limit=1&orgId=${ZOHO_ORG_ID}`,
+    { headers: { 'Authorization': `Zoho-oauthtoken ${token}` } }
   )
 
   if (testRes.ok) return token
 
-  // Token expired — try to refresh
+  // Token expired — refresh it
   const refreshToken = process.env.ZOHO_DESK_REFRESH_TOKEN
   const clientId = process.env.ZOHO_DESK_CLIENT_ID
   const clientSecret = process.env.ZOHO_DESK_CLIENT_SECRET
@@ -41,26 +41,17 @@ async function getValidToken(): Promise<string | null> {
   }
 }
 
-async function zohoGet(path: string): Promise<any> {
-  const token = await getValidToken()
-  if (!token) {
-    console.error('No valid Zoho token available')
-    return null
-  }
-
-  const url = path.includes('?')
-    ? `${BASE_URL}${path}&orgId=${ZOHO_ORG_ID}`
-    : `${BASE_URL}${path}?orgId=${ZOHO_ORG_ID}`
+async function zohoGet(path: string, token: string): Promise<any> {
+  const separator = path.includes('?') ? '&' : '?'
+  const url = `${BASE_URL}${path}${separator}orgId=${ZOHO_ORG_ID}`
 
   const res = await fetch(url, {
-    headers: {
-      'Authorization': `Zoho-oauthtoken ${token}`,
-      'orgId': ZOHO_ORG_ID,
-    },
+    headers: { 'Authorization': `Zoho-oauthtoken ${token}` },
   })
 
   if (!res.ok) {
-    console.error(`Zoho error ${res.status} for ${path}:`, await res.text())
+    const errText = await res.text()
+    console.error(`Zoho error ${res.status} for ${path}:`, errText)
     return null
   }
   return res.json()
@@ -87,49 +78,66 @@ export interface ZohoThread {
   summary: string
 }
 
+function buildTicketData(ticket: any, threads: ZohoThread[]): ZohoTicketData {
+  return {
+    id: ticket.id,
+    ticketNumber: ticket.ticketNumber,
+    subject: ticket.subject || '',
+    status: ticket.status || '',
+    topic: ticket.cf?.cf_topic || ticket.customFields?.Topic || '',
+    customerName: ticket.contact
+      ? `${ticket.contact.firstName || ''} ${ticket.contact.lastName || ''}`.trim()
+      : '',
+    customerEmail: ticket.email || ticket.contact?.email || '',
+    assigneeName: ticket.assignee
+      ? `${ticket.assignee.firstName || ''} ${ticket.assignee.lastName || ''}`.trim()
+      : 'Unassigned',
+    createdAt: ticket.createdTime
+      ? new Date(ticket.createdTime).toLocaleDateString('en-US', {
+          month: 'short', day: 'numeric', year: 'numeric'
+        })
+      : '',
+    shopifyLink: ticket.cf?.cf_shopify_link
+      || ticket.customFields?.['Shopify Link']
+      || '',
+    threads,
+  }
+}
+
 export async function getTicketByNumber(ticketNumber: string): Promise<ZohoTicketData | null> {
   try {
+    const token = await getValidToken()
+    if (!token) {
+      console.error('No valid Zoho token')
+      return null
+    }
+
     const cleaned = ticketNumber.replace('#', '').trim()
-    const data = await zohoGet(`/tickets?ticketNumber=${cleaned}`)
-    if (!data?.data?.length) return null
+
+    // Use the search endpoint with ticketNumber field
+    const data = await zohoGet(`/tickets/search?ticketNumber=${cleaned}`, token)
+
+    if (!data?.data?.length) {
+      console.error('No ticket found for number:', cleaned)
+      return null
+    }
 
     const ticket = data.data[0]
-    const threads = await getTicketThreads(ticket.id)
-
-    return {
-      id: ticket.id,
-      ticketNumber: ticket.ticketNumber,
-      subject: ticket.subject || '',
-      status: ticket.status || '',
-      topic: ticket.cf?.cf_topic || ticket.customFields?.Topic || '',
-      customerName: ticket.contact
-        ? `${ticket.contact.firstName || ''} ${ticket.contact.lastName || ''}`.trim()
-        : '',
-      customerEmail: ticket.email || ticket.contact?.email || '',
-      assigneeName: ticket.assignee
-        ? `${ticket.assignee.firstName || ''} ${ticket.assignee.lastName || ''}`.trim()
-        : 'Unassigned',
-      createdAt: ticket.createdTime
-        ? new Date(ticket.createdTime).toLocaleDateString('en-US', {
-            month: 'short', day: 'numeric', year: 'numeric'
-          })
-        : '',
-      shopifyLink: ticket.cf?.cf_shopify_link || ticket.customFields?.['Shopify Link'] || '',
-      threads,
-    }
+    const threads = await getTicketThreads(ticket.id, token)
+    return buildTicketData(ticket, threads)
   } catch (err) {
     console.error('Zoho ticket lookup error:', err)
     return null
   }
 }
 
-async function getTicketThreads(ticketId: string): Promise<ZohoThread[]> {
+async function getTicketThreads(ticketId: string, token: string): Promise<ZohoThread[]> {
   try {
-    const data = await zohoGet(`/tickets/${ticketId}/conversations?limit=25`)
+    const data = await zohoGet(`/tickets/${ticketId}/conversations?limit=25`, token)
     if (!data?.data) return []
 
     return [...data.data].reverse().map((t: any) => ({
-      direction: t.direction === 'in' ? 'in' : 'out',
+      direction: t.direction === 'in' ? 'in' as const : 'out' as const,
       author: t.author?.name || (t.direction === 'in' ? 'Customer' : 'Agent'),
       date: t.createdTime
         ? new Date(t.createdTime).toLocaleDateString('en-US', {
