@@ -97,10 +97,13 @@ Please draft the first outbound email to this customer.`
       const zohoTicket = await getTicketByNumber(ticketNumber)
       const threadSummary = zohoTicket ? formatThreadsForAI(zohoTicket.threads) : 'Could not retrieve ticket data.'
 
-      // Try to find Shopify order from ticket subject or customer email
+      // Look up Shopify order — first try the Shopify link stored in Zoho custom fields
       let orderDetails = null
-      if (zohoTicket?.customerEmail) {
-        const orderNum = extractOrderNumber(zohoTicket.subject || '')
+      if (zohoTicket?.shopifyLink) {
+        orderDetails = await lookupOrderByUrl(zohoTicket.shopifyLink)
+      }
+      if (!orderDetails) {
+        const orderNum = extractOrderNumber(zohoTicket?.subject || '')
         if (orderNum) orderDetails = await lookupOrderByNumber(orderNum)
       }
 
