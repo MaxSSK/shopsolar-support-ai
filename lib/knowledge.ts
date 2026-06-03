@@ -873,17 +873,17 @@ ${TICKET_CLASSIFICATION}
 ${TICKET_PROCESSES}
 
 ## OUTPUT FORMAT
-Return a JSON object with these fields:
+Return a JSON object with these exact fields:
 
 {
-  "ticketType": "e.g. Service Request — Warranty",
-  "workflow": "e.g. Workflow 1 — Service Request",
-  "routeTo": "e.g. Keri / Maddie / Chantelle — Recovery Team",
-  "customerName": "First name only",
+  "classification": "One of: RETURN_REQUEST | WARRANTY_CLAIM | WARRANTY_TECHNICAL | MISSING_INFO | OTHER",
+  "confidence": "One of: HIGH | MEDIUM | LOW",
+  "routing": "e.g. Keri / Maddie / Chantelle — Recovery Team",
+  "summary": "1–2 sentence plain-English summary of the issue and what this draft does",
   "subject": "Email subject line",
-  "emailBody": "Full email draft — warm, direct, in ShopSolar voice. End with:\\n\\nKind regards,\\n[AGENT NAME]\\n[Title]\\nwww.ShopSolarKits.com\\n877.242.2792",
-  "missingInfo": ["List any info that would improve this draft if available"],
-  "internalNotes": "Any notes for the agent reviewing this draft — context, flags, next steps"
+  "draft_response": "Full email draft — warm, direct, in ShopSolar voice. End with:\\n\\nKind regards,\\n[AGENT NAME]\\n[Title]\\nwww.ShopSolarKits.com\\n877.242.2792",
+  "missing_info": ["List any info that would improve this draft if available"],
+  "internal_notes": "Any notes for the agent reviewing this draft — context, flags, next steps"
 }
 
 ## RULES
@@ -894,7 +894,7 @@ Return a JSON object with these fields:
 - Never give tax, accounting, or regulatory advice
 - Never recommend a licensed installer for final wiring of a large kit
 - Match ShopSolar's voice: warm, grounded, empathetic, direct, plain English
-- If the ticket type is unclear from the Slack message, make your best classification and note it in internalNotes
+- If the ticket type is unclear from the Slack message, make your best classification and note it in internal_notes
 - Use exact email templates and language from the ticket process guide where applicable
 - Leave [AGENT NAME] and [Title] as placeholders
 `;
@@ -924,17 +924,17 @@ ${TICKET_CLASSIFICATION}
 ${TICKET_PROCESSES}
 
 ## OUTPUT FORMAT
-Return a JSON object with these fields:
+Return a JSON object with these exact fields:
 
 {
-  "ticketType": "e.g. Recovery Request — Warranty Replace",
-  "workflow": "e.g. Workflow 2 — Internal Recovery Request",
-  "routeTo": "e.g. Keri / Recovery Team",
-  "customerName": "First name only",
+  "classification": "One of: RETURN_REQUEST | WARRANTY_CLAIM | WARRANTY_TECHNICAL | MISSING_INFO | OTHER",
+  "confidence": "One of: HIGH | MEDIUM | LOW",
+  "routing": "e.g. Keri / Recovery Team",
+  "summary": "1–2 sentence plain-English summary of where the ticket is at and what this draft does",
   "subject": "RE: [original subject] or new subject if appropriate",
-  "emailBody": "Full email draft — warm, direct, in ShopSolar voice. End with:\\n\\nKind regards,\\n[AGENT NAME]\\n[Title]\\nwww.ShopSolarKits.com\\n877.242.2792",
-  "missingInfo": ["List any info that would improve this draft if available"],
-  "internalNotes": "Notes for the reviewing agent — what stage are we at, what to watch for, any flags"
+  "draft_response": "Full email draft — warm, direct, in ShopSolar voice. End with:\\n\\nKind regards,\\n[AGENT NAME]\\n[Title]\\nwww.ShopSolarKits.com\\n877.242.2792",
+  "missing_info": ["List any info that would improve this draft if available"],
+  "internal_notes": "Notes for the reviewing agent — what stage are we at, what to watch for, any flags"
 }
 
 ## RULES
