@@ -76,6 +76,221 @@ Leave [AGENT NAME] and [Title] as placeholders — the reviewer fills these in b
 `;
 
 // ─────────────────────────────────────────────
+// TECHNICAL SUPPORT KNOWLEDGE BASE
+// Source: 877 closed tickets (Karl Gamboa, Yvhan Reyes, Khim Galido) + Karl's direct input
+// Last updated: June 2026
+// ─────────────────────────────────────────────
+
+export const TECHNICAL_KNOWLEDGE = `
+
+## TECHNICAL TEAM
+- Karl Angel Gamboa — Senior Technical Support Specialist
+- Yvhan Reyes — Technical Product Specialist
+- Khim Claire Galido — Technical Product Specialist
+- EJ C. — Technical Support
+
+Route all Technical Question tickets to this team.
+
+## TECHNICAL EMAIL VOICE
+Slightly more formal than recovery but still warm and personal.
+- Opener: "Hi [Name], We hope this email finds you well. Good morning/afternoon."
+- Always address customer by first name
+- Closing: "Thank you, and have a nice day ahead. Kind regards, [NAME] | Senior Technical Support Specialist | [www.ShopSolarKits.com](https://www.ShopSolarKits.com) | 877-242-2792"
+- Follow-up line: "I wanted to follow up and see if you've had a chance to review my previous email."
+- Keeping ticket open: "Kindly please keep us posted for any updates at your convenience."
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+UNIVERSAL TECHNICAL FIRST-RESPONSE RULES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+## ALWAYS ASK FOR (if not already in Shopify order or timeline notes)
+For ANY technical ticket, the first response should request:
+- Photos of system setup including all wiring
+- Fault or error codes showing on any display (screenshot preferred)
+- Serial number of the item in question
+- Detailed description of what happened, when it started, any recent changes (load increases, new components, wiring changes)
+- Video via WeTransfer if the file is too large to email
+
+## NEVER DIAGNOSE IN THE FIRST EMAIL
+Gather information first. Never guess at a root cause or recommend a fix before seeing photos, error codes, and voltage readings. The first email is always an acknowledgement + info request + expectation setting.
+
+## SAFETY HARD RULE — IMMEDIATE ESCALATION
+If a customer mentions ANY of the following, do NOT attempt to troubleshoot. Draft a safety advisory, recommend immediate shutdown, and route to Karl/recovery immediately:
+- Burning smell
+- Smoke
+- Physical damage to batteries or inverter
+- Swelling or bulging batteries
+- Explosion or pop sound from any component
+- "Soft bus start failed" error
+- "Internal busbar error" or any internal bus DC voltage error
+
+NOTE: Damaged batteries can still output correct voltage even after physical failure. Voltage reading alone does not confirm safety. If there is visible damage — treat as unsafe regardless of readings.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PATTERN 1 — MONITORING APP & DONGLE CONNECTIVITY
+(21% of all technical tickets — most common issue)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+## WHAT IT IS
+Customer cannot connect their inverter or battery to the manufacturer monitoring app. Common presentations:
+- "Unknown error" when adding dongle via serial/PIN
+- App not syncing or showing device as offline
+- WiFi registration failing silently
+- Dongle not recognized after a firmware update
+- Monitoring shows wrong data or stops updating
+
+## #1 HIDDEN CAUSE
+Special characters in the home WiFi password (!, @, #, $, %, &, etc.) cause dongle registration to fail silently with no clear error message. This is the most common cause and the customer almost never suspects it. Always ask.
+
+## WHAT TO ASK FOR FIRST
+- Screenshot of the exact error message
+- Dongle serial number and PIN
+- Home WiFi network name
+- Does the WiFi password contain any special characters (!, @, #, $, etc.)?
+
+## EG4 DONGLE RESOURCES
+- EG4 WiFi Dongle Troubleshooting Guide (current): https://eg4electronics.com/wp-content/uploads/2024/07/EG4-Wifi-Dongle-Troubleshooting-Guide.pdf
+- If customer needs setup guide: https://eg4electronics.com/wp-content/uploads/2024/07/EG4-Wifi-Dongle-Tutorial.pdf
+
+## RESOLUTION PATHS (in order)
+1. Special character in WiFi password → ask customer to change password or use a guest network without special characters
+2. Manual registration via manufacturer portal instead of auto-registration
+3. Dongle firmware needs updating → send update guide
+4. Dongle hardware defective → escalate to manufacturer warranty via recovery team
+
+## FIRST RESPONSE DRAFT GUIDANCE
+Acknowledge the issue. Ask for the error screenshot, dongle serial/PIN, and whether the WiFi password has any special characters. Set expectation that the tech team will review and follow up with next steps once they have this information.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PATTERN 2 — GENERATOR & GRID CONNECTION
+(17% of all technical tickets — resolves fastest, avg 3 exchanges)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+## WHAT IT IS
+Customer is connecting a generator or grid power to their solar system. Common issues:
+- Generator not recognized by inverter or not charging batteries
+- Wrong cable or adapter
+- Transfer switch compatibility question
+- Utility vs battery priority settings confusion
+
+## ECOFLOW DELTA PRO ULTRA — MOST COMMON SPECIFIC ISSUE
+Customers frequently have the wrong generator adapter. The correct one is:
+Model EFY1751-GC — 30 amp outlet
+If a customer has a Delta Pro Ultra and a generator connection issue, confirm they have this adapter before anything else.
+
+## INVERTER UTILITY SETTINGS
+Many tickets are customers asking about grid vs battery priority. Karl's standard guidance:
+- Setting 01 on most inverters controls output source priority (Uti = utility/grid first, Sol = solar first, SBU = solar-battery-utility)
+- To test if grid is being recognized: change setting 01 to Uti and check if utility triggers
+- Recommend based on customer's specific use case (backup vs off-grid vs grid-tied)
+
+## WHAT TO ASK FOR FIRST
+- Generator make, model, and rated wattage/amperage output
+- Inverter make and model
+- Which port/connection they're using and what cable/adapter
+- For EcoFlow: confirm whether they have the EFY1751-GC adapter
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PATTERN 3 — BATTERY CONCERNS
+(11% of all technical tickets)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+## WHAT IT IS
+Battery not turning on, not charging, SOC incorrect, cells out of balance, BMS fault, or compatibility questions.
+
+## WHAT TO ASK FOR FIRST
+- Battery voltage reading from a multimeter
+- SOC % showing on display
+- Number of batteries and how they're wired (series vs parallel)
+- Battery brand and model
+- Whether they've tried a hard reset
+- Photos of wiring configuration
+
+## CRITICAL RULE — MIXED BATTERY BRANDS
+Never recommend mixing different battery brands, capacities, or chemistry types in the same bank. If a customer describes a mixed battery setup, flag this explicitly as a likely cause of their issue and advise against it.
+
+## BATTERY ISOLATION PROCESS
+When multiple batteries are unbalanced or one is suspected faulty:
+1. Unplug all batteries
+2. Charge each one individually to full
+3. Reconnect one at a time to identify the problem unit
+4. Do not reconnect all until each has been individually verified
+
+## HARD RESET PROCEDURES
+EG4 inverter: Power down completely. Disconnect all loads, solar, and battery connections. Let it rest for several minutes. Reconnect in proper sequence (battery first, then solar, then loads).
+SunGold inverter: Same process — power down, disconnect everything, let it rest, reconnect in sequence.
+EcoFlow Delta series: Remove all connected cables. Long-press the power button for 10 seconds. Release and power back on normally.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PATTERN 4 — FIRMWARE UPDATES
+(9% of all technical tickets — most complex, avg 16 exchanges)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+## WHAT IT IS
+Customer needs to update firmware on inverter or batteries, often because of an error code or performance issue traceable to outdated firmware.
+
+## SET EXPECTATIONS UPFRONT
+Firmware update tickets require careful back-and-forth and typically take multiple exchanges. Always tell the customer this will be a step-by-step process and to follow instructions carefully.
+
+## EG4 LP04 BATTERY FIRMWARE UPDATE
+Karl sends this constantly. Current resource page:
+https://eg4electronics.com/categories/batteries/eg4-lifepower4-48v-100ah-lithium-iron-phosphate-battery
+The firmware document itself doesn't change unless EG4 releases a new patch, which is rare.
+
+## EG4 ERROR CODE 32 = FIRMWARE UPDATE NEEDED
+If a customer reports Error Code 32 on an EG4 inverter, this specifically means the firmware is out of date. Response: ask for current firmware version screenshot and send the update guide.
+
+## WHAT TO ASK FOR FIRST
+- Current firmware version (screenshot of settings/about screen on the device)
+- Model number and serial number
+- What prompted the concern (error code, performance issue, or proactive)
+- For EG4: photos of battery connections and serial numbers
+
+## BRANDS THAT FREQUENTLY NEED FIRMWARE UPDATES
+- EG4 (LP04 batteries most common)
+- Sol-Ark (USB drive update process)
+- EcoFlow (app-based update)
+- SunGold
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PATTERN 5 — COMMISSIONING & INITIAL SETUP
+(8% of all technical tickets)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+## WHAT IT IS
+Customer has their system and needs help getting it running for the first time. First power-on, settings configuration, wiring verification.
+
+## ALWAYS ASK FOR FIRST
+Photos of wiring configuration — AC output to panel, DC from batteries/solar — before recommending anything.
+
+## EG4 6000XP NEUTRAL-GROUND BONDING
+EG4 6000XP inverters are factory bonded neutral-to-ground. For off-grid systems this can be disabled via settings if needed. This is normal and expected — not a fault.
+
+## SUNGOLD 5000W 48V RECOMMENDED SETTINGS
+Karl's standard recommended settings (pending Karl's full settings list — update when received):
+- Setting 01: Output source priority — set based on customer use case (Uti for grid-tied, SBU for solar-first off-grid)
+- Additional settings to be added once Karl provides the full list
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+KNOWN ERROR CODE → FIX MAPPINGS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+| Brand | Error Code | Meaning | Standard Response |
+|---|---|---|---|
+| EG4 | Error 32 | Firmware out of date | Ask for firmware version screenshot; send LP04 update guide |
+| EG4 | Error 19 | Grid/utility config issue | Check setting 01 — change to Uti to test grid recognition |
+| Sol-Ark | F34 | Load imbalance between legs | Ensure loads are properly balanced between each leg of the inverter |
+| Any | "Soft bus start failed" | Inverter cannot invert / internal bus DC voltage issue | ESCALATE IMMEDIATELY — do not troubleshoot, route to Karl and manufacturer |
+| Any | "Internal busbar error" | Internal DC voltage fault | ESCALATE IMMEDIATELY — do not troubleshoot |
+| Any inverter | Overload alarm | Connected load exceeds inverter capacity | Calculate total connected load vs inverter rated capacity |
+
+## SOL-ARK ESCALATION RULE
+F34 (load imbalance) can be resolved over email — advise customer to balance loads across legs.
+Any other Sol-Ark fault code not listed above: gather display screenshot and route to Karl for review before advising customer. Do not attempt to diagnose Sol-Ark faults beyond F34 without Karl's input.
+
+`;
+
+// ─────────────────────────────────────────────
 // TICKET CLASSIFICATION GUIDE
 // ─────────────────────────────────────────────
 
@@ -868,6 +1083,8 @@ Your job:
 
 ${KNOWLEDGE_BASE}
 
+${TECHNICAL_KNOWLEDGE}
+
 ${TICKET_CLASSIFICATION}
 
 ${TICKET_PROCESSES}
@@ -918,6 +1135,8 @@ Your job:
 4. Flag anything that needs agent attention before sending
 
 ${KNOWLEDGE_BASE}
+
+${TECHNICAL_KNOWLEDGE}
 
 ${TICKET_CLASSIFICATION}
 
