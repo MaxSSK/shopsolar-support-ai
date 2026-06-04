@@ -291,6 +291,142 @@ Any other Sol-Ark fault code not listed above: gather display screenshot and rou
 `;
 
 // ─────────────────────────────────────────────
+// RECOVERY & FULFILLMENT KNOWLEDGE BASE
+// Source: 4,083 closed tickets (Maddie S, Chantelle P, Keri E., Marielle N, Clifferwayn/Wayne)
+// Last updated: June 2026
+// ─────────────────────────────────────────────
+
+export const RECOVERY_KNOWLEDGE = `
+
+## RECOVERY & FULFILLMENT TEAM
+- Keri E. — Operations Manager
+- Maddie S. — Customer Relations Manager
+- Chantelle P. — Customer Experience Associate
+- Marielle N. — Fulfillment
+- Clifferwayn Alas (Wayne) — Fulfillment Specialist
+- Kristine Alas (Tin) — Fulfillment
+
+## RECOVERY TEAM EMAIL VOICE
+
+Maddie: Warm and empathetic opener. Validates feelings before problem-solving.
+Sign-off: Kind regards, Maddie S. | Customer Relations Manager | [www.ShopSolarKits.com](https://www.ShopSolarKits.com) | 877-242-2792
+
+Chantelle: Direct and friendly. States what she has done immediately.
+Sign-off: Kind regards, Chantelle P | Customer Experience Associate | [www.shopsolarkits.com](https://www.shopsolarkits.com) | +1-877-242-2792
+
+Keri: Concise and warm. Gets to the point fast.
+Sign-off: Kind regards, Keri E | Operations Manager | [www.ShopSolarKits.com](https://www.ShopSolarKits.com) | 877.242.2792
+
+Wayne/Clifferwayn: Brief and informative for fulfillment updates.
+Sign-off: Winny Wayn A. | Fulfillment Specialist | wayn.a@shopsolarkits.com | 877-242-2792
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+RECOVERY PATTERN 1 — MISSING / SHIPPING STATUS
+(20% of all recovery tickets — highest volume, resolves fast)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+WHAT IT IS: Customer asking where their order is, tracking not updating, item showing delivered but not received, multi-shipment order where some items arrived but others have not.
+
+FIRST RESPONSE:
+1. Check Shopify for all tracking numbers and carriers on the order
+2. Note if the order ships in multiple packages — many kits do, customers often panic when one arrives without the others
+3. If no tracking yet: advise we are reaching out to the warehouse for an update
+4. If marked delivered but not received: ask customer to check with neighbours, check security cameras, confirm shipping address was correct
+5. For large freight: remind customer to review the Delivery Inspection Checklist; 72-hour damage claim window begins at delivery
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+RECOVERY PATTERN 2 — BACKORDER / DELAY
+(8% of all recovery tickets — fastest to resolve)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+APPROACH: Check with manufacturer for current ETA and relay honestly. If no ETA available, say so directly — never invent a timeline. If severely delayed, proactively offer cancellation rather than making customer ask. Discount codes or gift cards as goodwill on significant delays (Keri or Eric approval required). Close ticket and reopen proactively when there is news.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+RECOVERY PATTERN 3 — CANCELLATION
+(5% of all recovery tickets)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+PRE-SHIP: Confirm with manufacturer/supplier they have cancelled before processing refund. Get written confirmation first.
+
+POST-SHIP: Contact manufacturer to attempt interception (not guaranteed). If not intercepted, advise customer to REFUSE delivery. If delivered and accepted, initiates return process.
+
+ECOFLOW CANCELLATION NOTE: EcoFlow sends an automated cancellation confirmation email (subject contains [#ANKER-TNX...] or similar format) into the ticket thread. Use this as confirmation that EcoFlow has processed the cancellation on their end before processing the refund in Shopify.
+
+REFUND LANGUAGE: "I have submitted the refund request and you will see that applied to the original method of payment within 3-5 business days."
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+RECOVERY PATTERN 4 — RETURN / REFUND
+(5% of all recovery tickets — high complexity, avg 14 threads)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+PROCESS: Photos required first. Submit to manufacturer for approval. Once approved: send RMA and return address specific to that manufacturer. Customer pays return shipping. Return must be in transit within 7 days of approval or voided. Refund minus restocking fee and original shipping once received and inspected. Timeline: "Please allow 3-5 business days for the refund to appear once processed."
+
+GOODWILL OPTIONS (Keri or Eric approval required):
+- Partial refund for cosmetic damage where customer keeps the item
+- Discount code as alternative to partial refund (customer-specific format e.g. CUSTOMERNAME2026)
+- Gift card for significant delays or issues
+Do not offer these in a draft without flagging as requiring approval in internal_notes.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+RECOVERY PATTERN 5 — DAMAGE
+(1% of all recovery tickets — most complex, avg 14.1 threads)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+GENERAL DAMAGE: Acknowledge and open claim. Request: description of damage, photos of item outside box, serial number. Submit to manufacturer/supplier for review.
+
+72-HOUR FREIGHT CLAIM WINDOW — CRITICAL: For large freight shipments, damage claim window is 72 BUSINESS HOURS from delivery. Always flag this urgency in the first response. If this window closes the claim cannot be filed.
+
+SOLAR PANEL DAMAGE — PREFERRED RESOLUTION: Offer a refund for the damaged panel(s) as the first option — shipping individual replacement panels is extremely expensive and slow.
+"Since individual panels are fragile and prone to damage during shipping, it is often safer and faster to source them locally. Would you prefer a refund for the cost of the damaged panel instead of a replacement?"
+
+DAMAGE CLAIM RESOURCES:
+- Signature Solar form: https://signaturesolar.com/loss-or-damage-report-form/
+- SunGold contact: Randi / Yolanda | 72 Fairbanks Suite 100, Irvine CA 92618 | 949-456-2964
+- Rich Solar panels: requires 4 specific photos (shipping label on box, whole damaged panel, whole package, panel and package side by side)
+
+POD NOT SIGNED FOR DAMAGE: Harder to win carrier claim but not impossible. Still gather all photos and attempt. Never tell the customer the claim is impossible.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+RECOVERY PATTERN 6 — WARRANTY (Recovery logistics)
+(2% of all recovery tickets — high complexity)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Note: Warranty approval comes from tech team first. Recovery handles logistics once approved. See brand-specific warranty processes in TICKET_PROCESSES section.
+
+ADDITIONAL BRANDS IDENTIFIED FROM REAL TICKETS:
+- AP Systems (microinverter manufacturer) — process to be added once confirmed with Keri
+- BigBattery — ShopSolar has arranged discounted replacement rates in some warranty cases; process to be confirmed with Keri
+- Enphase — process to be confirmed with Keri
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+RECOVERY PATTERN 7 — ADDRESS CHANGE
+(4% of all recovery tickets — fastest to resolve)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+APPROACH: Check Shopify first. If not yet sent to manufacturer: update in Shopify. If already with manufacturer: contact them directly to request the change. If already shipped: advise customer to contact carrier directly with their tracking number.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+TRUSTPILOT REVIEW REQUESTS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Standard practice across the recovery team: when a warranty, damage, return, or any difficult ticket resolves smoothly, close with a Trustpilot review request.
+Language: "If you are happy with how we handled this, we would truly appreciate it if you could take a moment to leave us a review on Trustpilot — it means a lot to our small team."
+Include this closing in any draft resolving a warranty, damage, or return ticket successfully.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SUPPLIER / INTERNAL THREAD RECOGNITION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Some ticket threads contain supplier or manufacturer communications rather than customer messages. Signs:
+- Subject contains manufacturer order numbers (e.g. WHUS-62015, RS102033)
+- First message is from a manufacturer domain (ecoflow.com, signaturesolar.com, richsolar.com, etc.)
+- Content is a shipping invoice, credit memo, or order confirmation from a supplier
+
+When a thread appears supplier-facing rather than customer-facing, flag this in internal_notes and ask the agent to confirm before drafting customer-facing copy.
+
+`;
+
+// ─────────────────────────────────────────────
 // TICKET CLASSIFICATION GUIDE
 // ─────────────────────────────────────────────
 
@@ -1085,6 +1221,8 @@ ${KNOWLEDGE_BASE}
 
 ${TECHNICAL_KNOWLEDGE}
 
+${RECOVERY_KNOWLEDGE}
+
 ${TICKET_CLASSIFICATION}
 
 ${TICKET_PROCESSES}
@@ -1137,6 +1275,8 @@ Your job:
 ${KNOWLEDGE_BASE}
 
 ${TECHNICAL_KNOWLEDGE}
+
+${RECOVERY_KNOWLEDGE}
 
 ${TICKET_CLASSIFICATION}
 
