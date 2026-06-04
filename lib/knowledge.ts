@@ -393,10 +393,43 @@ RECOVERY PATTERN 6 — WARRANTY (Recovery logistics)
 
 Note: Warranty approval comes from tech team first. Recovery handles logistics once approved. See brand-specific warranty processes in TICKET_PROCESSES section.
 
-ADDITIONAL BRANDS IDENTIFIED FROM REAL TICKETS:
-- AP Systems (microinverter manufacturer) — process to be added once confirmed with Keri
-- BigBattery — ShopSolar has arranged discounted replacement rates in some warranty cases; process to be confirmed with Keri
-- Enphase — process to be confirmed with Keri
+ADDITIONAL BRANDS — CONFIRMED PROCESSES
+
+AP Systems (microinverter)
+Contact: Crystal Davis, Technical Account Manager — crystal.davis@apsystems.com | Tech Support: (844) 279-8600
+Supplier channel: AP Systems equipment comes through TPS (The Power Store). TPS is not helpful under warranty.
+Status: NO formal process in place. AP Systems does not recognize ShopSolar as a distributor (despite TPS saying we are registered). This is an ongoing negotiation led by Maddie.
+Current approach (case by case):
+- Maddie purchases a replacement unit for the customer directly
+- Then pursues reimbursement from AP Systems and TPS after the fact
+- Escalate ALL AP Systems warranty issues directly to Maddie — do not promise a standard process to the customer
+- Flag in internal_notes: AP Systems warranty — escalate to Maddie, no standard process exists yet
+
+BigBattery
+Process:
+1. Tech team (Service 2) confirms the issue with BigBattery and gets warranty approved
+2. Tech opens a ticket with Service 1/Recovery once approved
+3. Recovery contacts BigBattery for a shipping quote for round-trip shipping (customer pays shipping)
+4. Sometimes BigBattery arranges the shipping quote directly with the customer
+5. Send customer BigBattery shipping instructions once quote is received
+6. ShopSolar monitors and facilitates throughout — ensures customer is taken care of
+7. Replacement only negotiated if BigBattery cannot repair the battery in question
+8. Close ticket once complete
+
+BigBattery first contact email template:
+"Thank you for your patience while we looked into your warranty concern. I would like to confirm that the warranty for your battery is held directly with the manufacturer, BigBattery. As outlined in their warranty policy, customers are responsible for covering the shipping costs to send the unit to BigBattery for repair or replacement if the issue arises after the first year of ownership. At this point, we kindly ask that you confirm your full return shipping address. Once confirmed, a shipping quote will be generated directly by BigBattery, and they will work with you from that point forward to resolve the warranty issue. Please know that while the warranty process is now being handled through BigBattery, ShopSolar is here to monitor the process and assist in any way we can to ensure everything goes smoothly."
+
+Enphase (missing items)
+Enphase items are sourced through TPS (The Power Store).
+For missing Enphase items: contact Randi at TPS. Assess items sent versus items paid for. Work with Randi to clear up the discrepancy.
+Enphase warranty: not a standard process — handle case by case through TPS/Randi.
+
+GOODWILL DISCOUNT CODES, STORE CREDITS AND GIFT CARDS
+Who approves: Recovery team discusses together. Keri approves most. Maddie handles smaller amounts independently without checking Keri or Eric unless the amount is large.
+Maddie's decision framework: order value, severity of the issue, level of customer frustration, who is at fault, cost of the item being discounted.
+When to use discount code vs. partial refund: discount codes are preferred when the issue does not warrant a direct refund but goodwill is needed — especially when it may lead to a future purchase.
+Important: always leave thorough notes on the Shopify order explaining the reasoning for any goodwill gesture.
+AI draft rule: flag any goodwill gesture recommendation in internal_notes with the reasoning. Do not specify a dollar amount or percentage — leave that for the agent to decide based on their assessment of the situation.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 RECOVERY PATTERN 7 — ADDRESS CHANGE
