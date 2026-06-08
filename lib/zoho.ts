@@ -132,10 +132,11 @@ export async function getTicketByNumber(ticketNumber: string): Promise<ZohoTicke
     }
 
     const cleaned = ticketNumber.replace('#', '').trim()
-    console.log('[Zoho] Fetching ticket number:', cleaned)
+    console.log('[Zoho] Calling /tickets/search?ticketNumber=', cleaned)
 
-    const data = await zohoGet(`/tickets?ticketNumber=${cleaned}`, token)
-    console.log('[Zoho] Ticket search result — data.count:', data?.count, 'data.data length:', data?.data?.length)
+    // Requires Desk.search.READ scope
+    const data = await zohoGet(`/tickets/search?ticketNumber=${cleaned}`, token)
+    console.log('[Zoho] Search result — count:', data?.count, 'data length:', data?.data?.length)
 
     if (!data?.data?.length) {
       console.error('[Zoho] ERROR: No ticket found for number:', cleaned, '| Full response:', JSON.stringify(data))
@@ -144,7 +145,6 @@ export async function getTicketByNumber(ticketNumber: string): Promise<ZohoTicke
 
     const ticket = data.data[0]
     console.log('[Zoho] Ticket found — id:', ticket.id, 'subject:', ticket.subject)
-
     const threads = await getTicketThreads(ticket.id, token)
     console.log('[Zoho] Threads fetched:', threads.length)
     return buildTicketData(ticket, threads)
