@@ -104,10 +104,12 @@ function buildConversationText(
 
 // ── Main handler ─────────────────────────────────────────────────────────
 export async function POST(req: NextRequest) {
-  // 1. Auth check
-  const secret = req.headers.get('x-ingest-secret')
+  // 1. Auth check — accept secret via header or query param
+  const secret =
+    req.headers.get('x-ingest-secret') ??
+    req.nextUrl.searchParams.get('secret')
   if (!secret || secret !== process.env.INGEST_SECRET) {
-    console.warn('[ingest] Unauthorized — bad or missing x-ingest-secret')
+    console.warn('[ingest] Unauthorized — bad or missing secret')
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
