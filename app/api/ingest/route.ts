@@ -102,7 +102,12 @@ function buildConversationText(
   return parts.join('\n\n').slice(0, 12000)
 }
 
-// ── Main handler ─────────────────────────────────────────────────────────
+// ── GET — Zoho webhook URL validation ────────────────────────────────────
+export function GET() {
+  return NextResponse.json({ status: 'ok' })
+}
+
+// ── POST — ingest closed ticket ───────────────────────────────────────────
 export async function POST(req: NextRequest) {
   // 1. Auth check — accept secret via header or query param
   const secret =
