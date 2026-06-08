@@ -2,16 +2,22 @@ const ZOHO_ORG_ID = '787984005'
 const BASE_URL = 'https://desk.zoho.com/api/v1'
 
 async function getValidToken(): Promise<string | null> {
+  console.log('[Zoho] getValidToken() called')
+
   const refreshToken = process.env.ZOHO_DESK_REFRESH_TOKEN
   const clientId     = process.env.ZOHO_DESK_CLIENT_ID
   const clientSecret = process.env.ZOHO_DESK_CLIENT_SECRET
 
+  console.log('[Zoho] Credential check —', {
+    hasRefreshToken: !!refreshToken,
+    refreshTokenPrefix: refreshToken?.slice(0, 12) ?? 'MISSING',
+    hasClientId:     !!clientId,
+    clientIdPrefix:  clientId?.slice(0, 10) ?? 'MISSING',
+    hasClientSecret: !!clientSecret,
+  })
+
   if (!refreshToken || !clientId || !clientSecret) {
-    console.error('Zoho OAuth credentials missing —', {
-      hasRefreshToken: !!refreshToken,
-      hasClientId:     !!clientId,
-      hasClientSecret: !!clientSecret,
-    })
+    console.error('[Zoho] ERROR: One or more OAuth credentials are missing from env vars')
     return null
   }
 
@@ -23,22 +29,26 @@ async function getValidToken(): Promise<string | null> {
       client_secret: clientSecret,
     })
 
+    console.log('[Zoho] POSTing to https://accounts.zoho.com/oauth/v2/token ...')
     const res = await fetch('https://accounts.zoho.com/oauth/v2/token', {
       method:  'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body:    body.toString(),
     })
 
+    console.log('[Zoho] Token refresh HTTP status:', res.status)
     const data = await res.json()
+    console.log('[Zoho] Token refresh response body:', JSON.stringify(data))
 
     if (!res.ok || data.error) {
-      console.error('Zoho token refresh failed —', JSON.stringify(data))
+      console.error('[Zoho] ERROR: Token refresh failed —', data.error, data.error_description ?? '')
       return null
     }
 
+    console.log('[Zoho] Token refresh SUCCESS — access_token prefix:', data.access_token?.slice(0, 12))
     return data.access_token || null
   } catch (err: any) {
-    console.error('Zoho token refresh exception —', err.message)
+    console.error('[Zoho] EXCEPTION during token refresh —', err.message)
     return null
   }
 }
@@ -47,16 +57,22 @@ async function zohoGet(path: string, token: string): Promise<any> {
   const separator = path.includes('?') ? '&' : '?'
   const url = `${BASE_URL}${path}${separator}orgId=${ZOHO_ORG_ID}`
 
+  console.log('[Zoho] GET', url)
   const res = await fetch(url, {
     headers: { 'Authorization': `Zoho-oauthtoken ${token}` },
   })
 
+  console.log('[Zoho] GET', path, '→ HTTP', res.status)
+
   if (!res.ok) {
     const errText = await res.text()
-    console.error(`Zoho error ${res.status} for ${path}:`, errText)
+    console.error(`[Zoho] ERROR: GET ${path} returned ${res.status} —`, errText)
     return null
   }
-  return res.json()
+
+  const json = await res.json()
+  console.log('[Zoho] GET', path, '→ response keys:', Object.keys(json))
+  return json
 }
 
 export interface ZohoTicketData {
@@ -107,37 +123,46 @@ function buildTicketData(ticket: any, threads: ZohoThread[]): ZohoTicketData {
 }
 
 export async function getTicketByNumber(ticketNumber: string): Promise<ZohoTicketData | null> {
+  console.log('[Zoho] getTicketByNumber() called with:', ticketNumber)
   try {
     const token = await getValidToken()
     if (!token) {
-      console.error('No valid Zoho token')
+      console.error('[Zoho] ERROR: getValidToken() returned null — aborting ticket fetch')
       return null
     }
 
     const cleaned = ticketNumber.replace('#', '').trim()
+    console.log('[Zoho] Fetching ticket number:', cleaned)
 
-    // Use the search endpoint with ticketNumber field
     const data = await zohoGet(`/tickets?ticketNumber=${cleaned}`, token)
+    console.log('[Zoho] Ticket search result — data.count:', data?.count, 'data.data length:', data?.data?.length)
 
     if (!data?.data?.length) {
-      console.error('No ticket found for number:', cleaned)
+      console.error('[Zoho] ERROR: No ticket found for number:', cleaned, '| Full response:', JSON.stringify(data))
       return null
     }
 
     const ticket = data.data[0]
+    console.log('[Zoho] Ticket found — id:', ticket.id, 'subject:', ticket.subject)
+
     const threads = await getTicketThreads(ticket.id, token)
+    console.log('[Zoho] Threads fetched:', threads.length)
     return buildTicketData(ticket, threads)
-  } catch (err) {
-    console.error('Zoho ticket lookup error:', err)
+  } catch (err: any) {
+    console.error('[Zoho] EXCEPTION in getTicketByNumber —', err.message, err.stack)
     return null
   }
 }
 
 async function getTicketThreads(ticketId: string, token: string): Promise<ZohoThread[]> {
+  console.log('[Zoho] getTicketThreads() called for ticket id:', ticketId)
   try {
     const data = await zohoGet(`/tickets/${ticketId}/conversations?limit=25`, token)
-    if (!data?.data) return []
-
+    if (!data?.data) {
+      console.error('[Zoho] ERROR: conversations response missing data field —', JSON.stringify(data))
+      return []
+    }
+    console.log('[Zoho] Conversations returned:', data.data.length)
     return [...data.data].reverse().map((t: any) => ({
       direction: t.direction === 'in' ? 'in' as const : 'out' as const,
       author: t.author?.name || (t.direction === 'in' ? 'Customer' : 'Agent'),
@@ -148,8 +173,8 @@ async function getTicketThreads(ticketId: string, token: string): Promise<ZohoTh
         : '',
       summary: t.summary || t.content || '(no preview)',
     }))
-  } catch (err) {
-    console.error('Zoho threads error:', err)
+  } catch (err: any) {
+    console.error('[Zoho] EXCEPTION in getTicketThreads —', err.message)
     return []
   }
 }
