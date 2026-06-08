@@ -19,7 +19,7 @@ const ZOHO_BASE   = 'https://desk.zoho.com/api/v1'
 // ── Agent → queue mapping ─────────────────────────────────────────────────
 const TECH_AGENTS        = new Set(['Karl', 'Khim', 'EJ', 'Yvhan'])
 const RECOVERY_AGENTS    = new Set(['Keri', 'Maddie', 'Chantelle'])
-const FULFILLMENT_AGENTS = new Set(['Marielle', 'Kristin', 'Wayne'])
+const FULFILLMENT_AGENTS = new Set(['Marielle', 'Kristin', 'Wayne', 'Clifferwayn'])
 const SALES_AGENTS       = new Set(['Eric', 'Mike', 'Mat', 'Bruce', 'James', 'Tony'])
 
 function resolveQueue(agentName: string): string {
@@ -135,8 +135,7 @@ export async function POST(req: NextRequest) {
     const ticketId: string | undefined = event?.payload?.id
 
     if (!ticketId) {
-      console.error('[ingest] Could not find ticket ID in payload:', JSON.stringify(body))
-      console.error(`[ingest] Full payload: ${JSON.stringify(body)}`)
+      console.error('[ingest] Could not find ticket ID in payload')
       return NextResponse.json({ error: 'Missing ticket ID in payload' }, { status: 400 })
     }
 
