@@ -121,6 +121,15 @@ export async function POST(req: NextRequest) {
   try {
     // 2. Parse payload — Zoho sends ticket data under ticket.id or top-level id
     const body = await req.json()
+
+    // 2a. Status gate — only proceed for Closed tickets
+    const status: string =
+      body?.ticket?.status ?? body?.status ?? ''
+    if (status && status !== 'Closed') {
+      console.log(`[ingest] Skipping — status is ${status}, not Closed`)
+      return NextResponse.json({ skipped: true, reason: 'not closed' })
+    }
+
     const ticketId: string | undefined =
       body?.ticket?.id ?? body?.id ?? body?.ticketId
 
