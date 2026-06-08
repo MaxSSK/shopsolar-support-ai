@@ -76,6 +76,19 @@ async function zohoGet(path: string, token: string): Promise<any> {
   return res.json()
 }
 
+// ── Strip HTML tags for plain-text length checks ─────────────────────────
+function stripHtml(html: string): string {
+  return html.replace(/<[^>]*>/g, '').trim()
+}
+
+const AUTOMATED_PATTERNS = [
+  'is on the way',
+  'your order is on the way',
+  'shipment from order',
+  'order confirmation',
+  'tracking number',
+]
+
 // ── Build the text blob to embed (mirrors embed-tickets.js) ──────────────
 function buildConversationText(
   subject: string,
@@ -158,7 +171,23 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, ticket_id: ticketId, skipped: true })
     }
 
-    // 4. Fetch ticket details from Zoho
+    // 4. Cheap payload-level quality filters (no API calls needed)
+
+    // Filter 1 — must have more than 1 thread
+    const threadCount = Number(event?.payload?.threadCount ?? 0)
+    if (threadCount === 1) {
+      console.log('[ingest] Skipping — only 1 thread, no agent reply')
+      return NextResponse.json({ skipped: true, reason: 'only 1 thread' })
+    }
+
+    // Filter 2 — must have an assignee
+    const hasAssignee = !!(event?.payload?.assigneeId ?? event?.payload?.assignee)
+    if (!hasAssignee) {
+      console.log('[ingest] Skipping — no assignee')
+      return NextResponse.json({ skipped: true, reason: 'no assignee' })
+    }
+
+    // 5. Fetch ticket details from Zoho
     const token = await getZohoToken()
     if (!token) {
       return NextResponse.json({ error: 'Failed to obtain Zoho token' }, { status: 500 })
@@ -174,7 +203,7 @@ export async function POST(req: NextRequest) {
       ? `${ticketData.assignee.firstName || ''} ${ticketData.assignee.lastName || ''}`.trim()
       : 'Unassigned'
 
-    // 5. Fetch conversation threads
+    // 6a. Fetch conversation threads
     const convData = await zohoGet(`/tickets/${ticketId}/conversations?limit=25`, token)
     const rawThreads: any[] = convData?.data ?? []
 
@@ -184,17 +213,43 @@ export async function POST(req: NextRequest) {
       content:   t.summary || t.content || '',
     }))
 
-    // 6. Extract first customer message and last agent message
-    const firstCustomerMessage = threads.find(t => t.direction === 'in')?.content ?? null
-    const lastAgentMessage     = [...threads].reverse().find(t => t.direction === 'out')?.content ?? null
+    // 6. Thread-level quality filters
 
-    // 7. Determine queue
+    // Filter 3 — last agent message must be substantial
+    const lastOutbound = [...threads].reverse().find(t => t.direction === 'out')
+    if (!lastOutbound) {
+      console.log('[ingest] Skipping — no outbound agent message found')
+      return NextResponse.json({ skipped: true, reason: 'no outbound agent message' })
+    }
+    const lastAgentPlain = stripHtml(lastOutbound.content)
+    if (lastAgentPlain.length < 150) {
+      console.log(`[ingest] Skipping — last agent message too short (${lastAgentPlain.length} chars)`)
+      return NextResponse.json({ skipped: true, reason: 'last agent message too short' })
+    }
+
+    // Filter 4 — skip automated notifications
+    const firstInbound = threads.find(t => t.direction === 'in')
+    const autoCheckText = [
+      firstInbound ? stripHtml(firstInbound.content) : '',
+      subject,
+    ].join(' ').toLowerCase()
+    const isAutomated = AUTOMATED_PATTERNS.some(p => autoCheckText.includes(p))
+    if (isAutomated) {
+      console.log('[ingest] Skipping — automated notification detected')
+      return NextResponse.json({ skipped: true, reason: 'automated notification' })
+    }
+
+    // 7. Extract first customer message and last agent message
+    const firstCustomerMessage = firstInbound?.content ?? null
+    const lastAgentMessage     = lastOutbound.content
+
+    // 8. Determine queue
     const queue = resolveQueue(agentName)
 
-    // 8. Build text to embed
+    // 9. Build text to embed
     const fullConversationText = buildConversationText(subject, agentName, threads)
 
-    // 9. Generate embedding
+    // 10. Generate embedding
     console.log('[ingest] Generating embedding for ticket:', ticketId)
     const embeddingResponse = await openai.embeddings.create({
       model: 'text-embedding-3-small',
@@ -202,7 +257,7 @@ export async function POST(req: NextRequest) {
     })
     const embedding = embeddingResponse.data[0].embedding
 
-    // 10. Upsert into Supabase
+    // 11. Upsert into Supabase
     const { error: upsertErr } = await supabase
       .from('tickets')
       .upsert(
