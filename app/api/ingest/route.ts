@@ -119,19 +119,20 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    // 2. Parse payload — Zoho sends ticket data under ticket.id or top-level id
+    // 2. Parse payload — Zoho sends an array; ticket data is at body[0].payload
     const body = await req.json()
+    const event = Array.isArray(body) ? body[0] : body
 
-    // 2a. Status gate — only proceed for Closed tickets
-    const status: string =
-      body?.ticket?.status ?? body?.status ?? ''
-    if (status && status !== 'Closed') {
-      console.log(`[ingest] Skipping — status is ${status}, not Closed`)
+    // 2a. Status gate — check new status (payload.status); only proceed for Closed
+    const newStatus: string = event?.payload?.status ?? ''
+    const prevStatus: string = event?.prevState?.status ?? ''
+    if (newStatus && newStatus !== 'Closed') {
+      console.log(`[ingest] Skipping — status is ${newStatus}, not Closed`)
       return NextResponse.json({ skipped: true, reason: 'not closed' })
     }
+    console.log(`[ingest] Status transition: ${prevStatus} → ${newStatus}`)
 
-    const ticketId: string | undefined =
-      body?.ticket?.id ?? body?.id ?? body?.ticketId
+    const ticketId: string | undefined = event?.payload?.id
 
     if (!ticketId) {
       console.error('[ingest] Could not find ticket ID in payload:', JSON.stringify(body))
