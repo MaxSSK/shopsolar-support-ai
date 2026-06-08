@@ -8,6 +8,7 @@ import {
   extractOrderNumber,
 } from '../../../lib/shopify'
 import { getTicketByNumber, formatThreadsForAI } from '../../../lib/zoho'
+import { findSimilarTickets, formatSimilarTicketsForPrompt } from '../../../lib/retrieval'
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
@@ -56,6 +57,16 @@ ${orderDetails.timelineNotes || 'No timeline notes found.'}
 `
       }
 
+      // Retrieve similar past tickets from Supabase
+      const retrievalQuery = [
+        slackData.topic || '',
+        slackData.customerName || '',
+        orderDetails?.lineItems.map(i => i.name).join(', ') || '',
+        slackText.slice(0, 300),
+      ].filter(Boolean).join(' — ')
+      const similarTickets = await findSimilarTickets(retrievalQuery)
+      const similarTicketsContext = formatSimilarTicketsForPrompt(similarTickets)
+
       const userMessage = `## SLACK WORKFLOW INPUT
 ${slackText}
 
@@ -67,6 +78,8 @@ Shopify link: ${slackData.shopifyLink || 'not found'}
 Added by: ${slackData.addedBy || 'unknown'}
 
 ${orderContext || 'Could not retrieve Shopify order data.'}
+
+${similarTicketsContext}
 
 Please draft the first outbound email to this customer.`
 
@@ -107,6 +120,15 @@ Please draft the first outbound email to this customer.`
         if (orderNum) orderDetails = await lookupOrderByNumber(orderNum)
       }
 
+      // Retrieve similar past tickets from Supabase
+      const retrievalQuery = [
+        zohoTicket?.topic || '',
+        zohoTicket?.subject || '',
+        orderDetails?.lineItems.map(i => i.name).join(', ') || '',
+      ].filter(Boolean).join(' — ')
+      const similarTickets = await findSimilarTickets(retrievalQuery)
+      const similarTicketsContext = formatSimilarTicketsForPrompt(similarTickets)
+
       const userMessage = `## ZOHO DESK TICKET #${ticketNumber.replace('#', '')}
 ${zohoTicket ? `Subject: ${zohoTicket.subject}
 Status: ${zohoTicket.status}
@@ -133,6 +155,8 @@ ${orderDetails.orderNote || 'No notes.'}
 Staff timeline notes:
 ${orderDetails.timelineNotes || 'No timeline notes.'}
 ` : 'Shopify order data not available for this ticket.'}
+
+${similarTicketsContext}
 
 Please draft the next reply in this conversation.`
 
