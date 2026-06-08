@@ -2,41 +2,43 @@ const ZOHO_ORG_ID = '787984005'
 const BASE_URL = 'https://desk.zoho.com/api/v1'
 
 async function getValidToken(): Promise<string | null> {
-  const token = process.env.ZOHO_DESK_TOKEN
-  if (!token) return null
-
-  // Test current token with a simple call
-  const testRes = await fetch(
-    `${BASE_URL}/tickets?limit=1&orgId=${ZOHO_ORG_ID}`,
-    { headers: { 'Authorization': `Zoho-oauthtoken ${token}` } }
-  )
-
-  if (testRes.ok) return token
-
-  // Token expired — refresh it
   const refreshToken = process.env.ZOHO_DESK_REFRESH_TOKEN
-  const clientId = process.env.ZOHO_DESK_CLIENT_ID
+  const clientId     = process.env.ZOHO_DESK_CLIENT_ID
   const clientSecret = process.env.ZOHO_DESK_CLIENT_SECRET
 
-  if (!refreshToken || !clientId || !clientSecret) return null
+  if (!refreshToken || !clientId || !clientSecret) {
+    console.error('Zoho OAuth credentials missing —', {
+      hasRefreshToken: !!refreshToken,
+      hasClientId:     !!clientId,
+      hasClientSecret: !!clientSecret,
+    })
+    return null
+  }
 
   try {
-    const params = new URLSearchParams({
+    const body = new URLSearchParams({
+      grant_type:    'refresh_token',
       refresh_token: refreshToken,
-      client_id: clientId,
+      client_id:     clientId,
       client_secret: clientSecret,
-      grant_type: 'refresh_token',
     })
 
-    const refreshRes = await fetch(
-      `https://accounts.zoho.com/oauth/v2/token?${params.toString()}`,
-      { method: 'POST' }
-    )
+    const res = await fetch('https://accounts.zoho.com/oauth/v2/token', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body:    body.toString(),
+    })
 
-    if (!refreshRes.ok) return null
-    const data = await refreshRes.json()
+    const data = await res.json()
+
+    if (!res.ok || data.error) {
+      console.error('Zoho token refresh failed —', JSON.stringify(data))
+      return null
+    }
+
     return data.access_token || null
-  } catch {
+  } catch (err: any) {
+    console.error('Zoho token refresh exception —', err.message)
     return null
   }
 }
