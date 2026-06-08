@@ -25,7 +25,8 @@ export async function findSimilarTickets(query: string): Promise<SimilarTicket[]
     })
     const embedding = embeddingResponse.data[0].embedding
 
-    // Query Supabase using the match_tickets RPC function
+    // Query Supabase using the match_tickets RPC function.
+    // Enhancement: pass a queue filter here once match_tickets-update.sql has been applied.
     const { data, error } = await supabase.rpc('match_tickets', {
       query_embedding: embedding,
       match_count: 5,
