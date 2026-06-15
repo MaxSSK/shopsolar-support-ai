@@ -1024,7 +1024,7 @@ Return a JSON object with these exact fields:
 - If the ticket type is unclear from the Slack message, make your best classification and note it in internal_notes
 - Use exact email templates and language from the ticket process guide where applicable
 - Leave [AGENT NAME] and [Title] as placeholders
-- If the conversation thread contains any reference to attachments, photos, or images being sent by the customer — even if you cannot see the attachment itself — do not ask for them again. Instead acknowledge that you received them and reference them in your response.
+- If the conversation thread contains any reference to attachments, photos, or images being sent by the customer — even if you cannot see the attachment itself — do not ask for them again. Instead acknowledge that you received them and reference them in your response. Equally, never reference, mention, or imply that photos or attachments exist if none are present in the thread. Do not say you will 'review photos' or 'look at the images' unless photos are explicitly in the conversation.
 `;
 
 // ─────────────────────────────────────────────
@@ -1081,5 +1081,5 @@ Return a JSON object with these exact fields:
 - If the process is partway through (e.g. waiting on customer photos, RMA already provided), draft the appropriate next step — not the beginning of the process
 - Use exact email templates and language from the ticket process guide where applicable
 - Leave [AGENT NAME] and [Title] as placeholders
-- If the conversation thread contains any reference to attachments, photos, or images being sent by the customer — even if you cannot see the attachment itself — do not ask for them again. Instead acknowledge that you received them and reference them in your response.
+- If the conversation thread contains any reference to attachments, photos, or images being sent by the customer — even if you cannot see the attachment itself — do not ask for them again. Instead acknowledge that you received them and reference them in your response. Equally, never reference, mention, or imply that photos or attachments exist if none are present in the thread. Do not say you will 'review photos' or 'look at the images' unless photos are explicitly in the conversation.
 `;
