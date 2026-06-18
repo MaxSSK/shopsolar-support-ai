@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ShopSolar AI Draft</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-size: 13px;
+      color: #1a1a1a;
+      background: #fff;
+      padding: 16px;
+    }
+
+    #state-idle,
+    #state-loading,
+    #state-result,
+    #state-error { display: none; }
+
+    #state-idle { display: block; }
+
+    /* ── Header ── */
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    .header svg { flex-shrink: 0; }
+    .header h1 { font-size: 14px; font-weight: 600; }
+
+    /* ── Idle state ── */
+    .ticket-info {
+      background: #f5f5f5;
+      border-radius: 6px;
+      padding: 10px 12px;
+      margin-bottom: 14px;
+      font-size: 12px;
+      color: #555;
+    }
+    .ticket-info strong { color: #1a1a1a; }
+
+    /* ── Buttons ── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 8px 14px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      border: none;
+      transition: opacity 0.15s;
+    }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-primary { background: #0d6efd; color: #fff; width: 100%; }
+    .btn-primary:hover:not(:disabled) { background: #0b5ed7; }
+    .btn-secondary {
+      background: #fff;
+      color: #0d6efd;
+      border: 1px solid #0d6efd;
+      flex: 1;
+    }
+    .btn-secondary:hover:not(:disabled) { background: #f0f5ff; }
+    .btn-success { background: #198754; color: #fff; flex: 1; }
+    .btn-success:hover:not(:disabled) { background: #157347; }
+
+    .btn-row {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    /* ── Loading ── */
+    .spinner {
+      width: 32px; height: 32px;
+      border: 3px solid #e0e0e0;
+      border-top-color: #0d6efd;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      margin: 32px auto 16px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-label { text-align: center; color: #666; }
+
+    /* ── Result ── */
+    .meta-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+    }
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+    .badge-high { background: #d1fae5; color: #065f46; }
+    .badge-medium { background: #fef3c7; color: #92400e; }
+    .badge-low { background: #fee2e2; color: #991b1b; }
+    .badge-routing { background: #e0e7ff; color: #3730a3; }
+
+    .section-label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #888;
+      margin-bottom: 6px;
+    }
+
+    .summary-box {
+      background: #f8f9fa;
+      border-radius: 6px;
+      padding: 10px 12px;
+      margin-bottom: 12px;
+      font-size: 12px;
+      line-height: 1.5;
+      color: #444;
+    }
+
+    .draft-box {
+      background: #fff;
+      border: 1px solid #d0d0d0;
+      border-radius: 6px;
+      padding: 12px;
+      font-size: 13px;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      min-height: 120px;
+      max-height: 280px;
+      overflow-y: auto;
+      margin-bottom: 4px;
+    }
+
+    .missing-info {
+      margin-top: 10px;
+      padding: 8px 12px;
+      background: #fffbeb;
+      border: 1px solid #fde68a;
+      border-radius: 6px;
+      font-size: 12px;
+      color: #78350f;
+    }
+    .missing-info ul { margin: 4px 0 0 16px; }
+
+    /* ── Error ── */
+    .error-box {
+      background: #fff0f0;
+      border: 1px solid #fca5a5;
+      border-radius: 6px;
+      padding: 12px;
+      color: #991b1b;
+      font-size: 12px;
+      margin-bottom: 12px;
+    }
+
+    .inserted-notice {
+      display: none;
+      background: #d1fae5;
+      border-radius: 6px;
+      padding: 8px 12px;
+      font-size: 12px;
+      color: #065f46;
+      font-weight: 500;
+      margin-top: 8px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── IDLE ── -->
+<div id="state-idle">
+  <div class="header">
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+      <circle cx="10" cy="10" r="9" fill="#0d6efd" opacity="0.15"/>
+      <path d="M6 10h8M10 6l4 4-4 4" stroke="#0d6efd" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <h1>ShopSolar AI Draft</h1>
+  </div>
+  <div class="ticket-info" id="ticket-info-display">
+    Loading ticket info…
+  </div>
+  <button class="btn btn-primary" id="btn-generate">
+    ✦ Generate Draft Reply
+  </button>
+</div>
+
+<!-- ── LOADING ── -->
+<div id="state-loading">
+  <div class="header">
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+      <circle cx="10" cy="10" r="9" fill="#0d6efd" opacity="0.15"/>
+      <path d="M6 10h8M10 6l4 4-4 4" stroke="#0d6efd" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <h1>ShopSolar AI Draft</h1>
+  </div>
+  <div class="spinner"></div>
+  <p class="loading-label">Drafting reply…</p>
+</div>
+
+<!-- ── RESULT ── -->
+<div id="state-result">
+  <div class="header">
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+      <circle cx="10" cy="10" r="9" fill="#0d6efd" opacity="0.15"/>
+      <path d="M6 10h8M10 6l4 4-4 4" stroke="#0d6efd" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <h1>ShopSolar AI Draft</h1>
+  </div>
+
+  <div class="meta-row">
+    <span class="badge" id="badge-confidence"></span>
+    <span class="badge badge-routing" id="badge-routing"></span>
+  </div>
+
+  <div class="section-label">Summary</div>
+  <div class="summary-box" id="result-summary"></div>
+
+  <div class="section-label">Draft Reply</div>
+  <div class="draft-box" id="result-draft"></div>
+
+  <div class="missing-info" id="missing-info" style="display:none">
+    <strong>Missing info the AI flagged:</strong>
+    <ul id="missing-info-list"></ul>
+  </div>
+
+  <div id="inserted-notice" class="inserted-notice">✓ Draft inserted into reply editor</div>
+
+  <div class="btn-row">
+    <button class="btn btn-secondary" id="btn-regenerate">↺ Regenerate</button>
+    <button class="btn btn-success" id="btn-insert">Insert into Reply</button>
+  </div>
+</div>
+
+<!-- ── ERROR ── -->
+<div id="state-error">
+  <div class="header">
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+      <circle cx="10" cy="10" r="9" fill="#0d6efd" opacity="0.15"/>
+      <path d="M6 10h8M10 6l4 4-4 4" stroke="#0d6efd" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <h1>ShopSolar AI Draft</h1>
+  </div>
+  <div class="error-box" id="error-message"></div>
+  <button class="btn btn-primary" id="btn-retry">Try Again</button>
+</div>
+
+<script src="https://js.zohostatic.com/support/developer_sdk/v1/js/ZohoDeskClientSDK.min.js"></script>
+<script>
+  // ── State helpers ──────────────────────────────────────────────
+  function show(id) {
+    ["state-idle", "state-loading", "state-result", "state-error"]
+      .forEach(s => document.getElementById(s).style.display = s === id ? "block" : "none");
+  }
+
+  function showError(msg) {
+    document.getElementById("error-message").textContent = msg;
+    show("state-error");
+  }
+
+  window.onload = function() {
+    ZOHODESK.extension.onload().then(function(App) {
+
+      // ── Ticket context ───────────────────────────────────────────
+      let ticketNumber = null;
+      let currentDraft = "";
+
+      ZOHODESK.get("ticket").then(function(data) {
+        const t = data["desk#ticket"] || data.ticket || {};
+        if (t.id && !t.number) {
+          console.warn("[ShopSolar AI] ticket.number was undefined — falling back to ticket.id (internal Zoho ID). /api/draft may not find this ticket by ID.");
+        }
+        ticketNumber = t.number || t.id;
+        const subject = t.subject || "(no subject)";
+        const customerName = t.contact ? (t.contact.firstName + " " + t.contact.lastName).trim() : "Unknown";
+
+        document.getElementById("ticket-info-display").innerHTML =
+          "<strong>Ticket #" + ticketNumber + "</strong><br>" + subject +
+          "<br><span style='color:#888'>" + customerName + "</span>";
+      }).catch(function() {
+        document.getElementById("ticket-info-display").textContent = "Could not load ticket info.";
+      });
+
+      // ── Draft call ─────────────────────────────────────────────
+      function generateDraft() {
+        if (!ticketNumber) {
+          showError("Ticket number not available. Please reload the widget.");
+          return;
+        }
+
+        show("state-loading");
+        document.getElementById("inserted-notice").style.display = "none";
+
+        ZOHODESK.request({
+          url: "https://shopsolar-support-ai.vercel.app/api/draft",
+          type: "POST",
+          headers: { "Content-Type": "application/json" },
+          postBody: {
+            mode: "existing",
+            ticketNumber: String(ticketNumber)
+          },
+          data: {}
+        }).then(function(response) {
+          let data;
+          try {
+            data = typeof response === "string" ? JSON.parse(response) : response;
+          } catch(e) {
+            showError("Unexpected response from server. Please try again.");
+            return;
+          }
+
+          if (data.error) {
+            showError(data.error);
+            return;
+          }
+
+          currentDraft = data.draft_response || "";
+          renderResult(data);
+        }).catch(function(err) {
+          showError("Request failed. Check your connection and try again.");
+          console.error("Draft request error:", err);
+        });
+      }
+
+      function renderResult(data) {
+        const conf = (data.confidence || "LOW").toUpperCase();
+        const badgeEl = document.getElementById("badge-confidence");
+        badgeEl.textContent = conf + " CONFIDENCE";
+        badgeEl.className = "badge badge-" + conf.toLowerCase();
+
+        document.getElementById("badge-routing").textContent = data.routing || "";
+        document.getElementById("result-summary").textContent = data.summary || "";
+        document.getElementById("result-draft").textContent = data.draft_response || "";
+
+        const missing = Array.isArray(data.missing_info) ? data.missing_info : [];
+        const missingEl = document.getElementById("missing-info");
+        if (missing.length > 0) {
+          const listEl = document.getElementById("missing-info-list");
+          listEl.innerHTML = "";
+          missing.forEach(function(item) {
+            const li = document.createElement("li");
+            li.textContent = item;
+            listEl.appendChild(li);
+          });
+          missingEl.style.display = "block";
+        } else {
+          missingEl.style.display = "none";
+        }
+
+        show("state-result");
+      }
+
+      // ── Insert into editor ───────────────────────────────────────
+      function insertDraft() {
+        if (!currentDraft) return;
+        ZOHODESK.invoke("INSERT", "ticket.replyEditor", {
+          value: currentDraft,
+          type: "replace"
+        }).then(function() {
+          document.getElementById("inserted-notice").style.display = "block";
+        }).catch(function(err) {
+          console.error("Insert failed:", err);
+          document.getElementById("inserted-notice").style.display = "block";
+        });
+      }
+
+      // ── Wire up buttons ──────────────────────────────────────────
+      document.getElementById("btn-generate").addEventListener("click", generateDraft);
+      document.getElementById("btn-regenerate").addEventListener("click", generateDraft);
+      document.getElementById("btn-retry").addEventListener("click", generateDraft);
+      document.getElementById("btn-insert").addEventListener("click", insertDraft);
+
+    });
+  };
+</script>
+</body>
+</html>
